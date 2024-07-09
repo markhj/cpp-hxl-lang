@@ -1,6 +1,7 @@
 ![Project Image](https://res.cloudinary.com/drfztvfdh/image/upload/v1720000791/Github/hxl-for-cpp_dpxqim.jpg)
 
 ![GitHub Tag](https://img.shields.io/github/v/tag/markhj/cpp-hxl-lang?label=version)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/57891ca26f284879bf27d775abecc38f)](https://app.codacy.com/gh/markhj/cpp-hxl-lang/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 **HXL for C++** is a library for the **HXL** data interchange
