@@ -1,0 +1,21 @@
+
+<Mesh3D> Bench
+    shape: "beautiful bench"
+
+<Mesh3D> Tree
+    shape: "tall tree"
+
+<BirdFlock> MurderOfCrows
+    count: 5
+    type: "crow"
+    attacks_player: true
+
+<Material> Grass
+    albedo_texture: "grass.png"
+    texture_uv[]: { 1.0, 1.0 }
+
+<Material> GrassHigherUV <= Grass
+    texture_uv[]: { 3.0, 3.0 }
+
+<Surface3D> Ground
+    material&: GrassHigherUV

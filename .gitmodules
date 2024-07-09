@@ -1,0 +1,6 @@
+[submodule "vendor/cpp-bbunit"]
+	path = vendor/cpp-bbunit
+	url = https://github.com/markhj/cpp-bbunit
+[submodule "vendor/doxygen-awesome-css"]
+	path = vendor/doxygen-awesome-css
+	url = https://github.com/jothepro/doxygen-awesome-css
