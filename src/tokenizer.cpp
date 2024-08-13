@@ -123,6 +123,7 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                     }
                     break;
 
+                // GEN.003 states that \r must be ignored.
                 case '\r':
                     // Ignore
                     break;
