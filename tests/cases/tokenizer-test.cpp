@@ -95,16 +95,18 @@ public:
      * General test of parsing node properties
      */
     void nodeProperty() {
-        assertTokenResult(
-                Tokenizer::tokenize("\tkey: 5\n"),
-                {
-                        {TokenType::T_TAB},
-                        {TokenType::T_IDENTIFIER, "key"},
-                        {TokenType::T_DELIMITER, ":"},
-                        {TokenType::T_WHITESPACE},
-                        {TokenType::T_INT, "5"},
-                        {TokenType::T_NEWLINE},
-                });
+        it("Checks parsing of node properties.", [&]() {
+            assertTokenResult(
+                    Tokenizer::tokenize("\tkey: 5\n"),
+                    {
+                            {TokenType::T_TAB},
+                            {TokenType::T_IDENTIFIER, "key"},
+                            {TokenType::T_DELIMITER, ":"},
+                            {TokenType::T_WHITESPACE},
+                            {TokenType::T_INT, "5"},
+                            {TokenType::T_NEWLINE},
+                    });
+        });
     }
 
     /**

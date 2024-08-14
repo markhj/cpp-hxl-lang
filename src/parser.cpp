@@ -197,7 +197,10 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
              *      or absence of whitespace.
              */
             case TokenType::T_WHITESPACE:
-                // Do nothing
+                // NODE.005
+                if (context == GC::PropertyKey) {
+                    return unexpectedTokenError(token);
+                }
                 break;
 
             /**

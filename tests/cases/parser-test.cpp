@@ -14,6 +14,8 @@ public:
         reference();
         inheritance();
         array();
+
+        node005_WhitespaceBetweenKeyAndColon();
     }
 
     /**
@@ -235,6 +237,20 @@ public:
                              "A",
                              {NodeProperty{"arr", {"a", "b", "c"}, DataType::String}}},
                     });
+        });
+    }
+
+    /**
+     * NODE.005
+     *
+     * Whitespace between key and ``:``
+     */
+    void node005_WhitespaceBetweenKeyAndColon() {
+        it("There should not be whitespace between key and colon", [&]() {
+            auto tokens = Tokenizer::tokenize("<NodeType> A\n\tkey : B\n");
+            assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
+                        "[Line 2, Col 5] Unexpected token: T_WHITESPACE",
+                        std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
 };
