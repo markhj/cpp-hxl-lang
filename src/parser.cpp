@@ -101,7 +101,14 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
     // For each token type, we check the contexts that it fits into
     // Ultimately, if no criteria is met, it will be considered an
     // "Unexpected token."
-    for (const Token &token: tokens) {
+    for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+        const Token &token = *it;
+        auto peekIt = std::next(it);
+        std::optional<Token> peek;
+        if (peekIt != tokens.end()) {
+            peek = *peekIt;
+        }
+
         switch (token.tokenType) {
             /**
              * Delimiters
@@ -123,6 +130,9 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                     context = GC::AfterNodeType;
                 } else if (context == GC::PropertyKey && tk == ":") {
                     context = GC::PropertyValue;
+                    if (peek.has_value() && peek->tokenType != TokenType::T_WHITESPACE) {
+                        return unexpectedTokenError(peek.value());
+                    }
                 } else if (context == GC::PropertyKey && tk == "[]") {
                     buildingProperty->specialization = PropertySpecialization::Array;
                 } else if (context == GC::PropertyKey && tk == "&") {
@@ -143,7 +153,8 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                 }
 
                 std::string tk = token.value.value();
-                if (context == GC::PropertyValue && tk != "{" && buildingProperty->specialization != PropertySpecialization::Array) {
+                if (context == GC::PropertyValue && tk != "{" &&
+                    buildingProperty->specialization != PropertySpecialization::Array) {
                     return Error{
                             .errorCode = ErrorCode::HXL_ILLEGAL_DATA_TYPE,
                             .message = std::format("Property {} is not declared as array.", tk),
@@ -159,9 +170,9 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                 break;
             }
 
-            /**
-             * Identifiers
-             */
+                /**
+                 * Identifiers
+                 */
             case TokenType::T_IDENTIFIER: {
                 if (!token.value.has_value()) {
                     return unexpectedTokenError(token);
@@ -181,7 +192,8 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                     buildingProperty = BuildingProperty{
                             .key = tk,
                     };
-                } else if (context == GC::PropertyValue && buildingProperty.has_value() && buildingProperty->specialization == PropertySpecialization::Reference) {
+                } else if (context == GC::PropertyValue && buildingProperty.has_value() &&
+                           buildingProperty->specialization == PropertySpecialization::Reference) {
                     buildingProperty.value() += token;
                 } else {
                     return unexpectedTokenError(token);
@@ -189,13 +201,9 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                 break;
             }
 
-            /**
-             * Ordinary whitespace
-             *
-             * @todo Implement some grammatical understanding, because the spec,
-             *      in many situations, has strict requirements to presence
-             *      or absence of whitespace.
-             */
+                /**
+                 * Ordinary whitespace
+                 */
             case TokenType::T_WHITESPACE:
                 // NODE.005
                 if (context == GC::PropertyKey) {
@@ -203,20 +211,20 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                 }
                 break;
 
-            /**
-             * New-line
-             *
-             * When a new-line is countered, we "reset" the contextual understanding
-             */
+                /**
+                 * New-line
+                 *
+                 * When a new-line is countered, we "reset" the contextual understanding
+                 */
             case TokenType::T_NEWLINE:
                 // If we're building a node property, we append it to the
                 // syntax tree.
                 if (currentNode.has_value() && sentence == Sentence::NodeProperty) {
                     nodes[currentNode.value()].properties.push_back({
-                            .name = buildingProperty->key,
-                            .values = buildingProperty->values,
-                            .dataType = buildingProperty->dataType,
-                    });
+                                                                            .name = buildingProperty->key,
+                                                                            .values = buildingProperty->values,
+                                                                            .dataType = buildingProperty->dataType,
+                                                                    });
                 }
 
                 // Reset the context, as we enter a new line
@@ -224,12 +232,12 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                 sentence = Sentence::NotDetermined;
                 break;
 
-            /**
-             * TAB
-             *
-             * Tab (at beginning of line) indicates that we're
-             * building a node property.
-             */
+                /**
+                 * TAB
+                 *
+                 * Tab (at beginning of line) indicates that we're
+                 * building a node property.
+                 */
             case TokenType::T_TAB:
                 switch (context) {
                     case GC::StartOfLine:
@@ -244,13 +252,13 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                 }
                 break;
 
-            /**
-             * Data types
-             *
-             * All data types should be added to the temporary "Building property"
-             * object. If that object isn't actively used, then a data type token
-             * was used somewhere it shouldn't.
-             */
+                /**
+                 * Data types
+                 *
+                 * All data types should be added to the temporary "Building property"
+                 * object. If that object isn't actively used, then a data type token
+                 * was used somewhere it shouldn't.
+                 */
             case TokenType::T_STRING_LITERAL:
             case TokenType::T_INT:
             case TokenType::T_FLOAT:
@@ -263,9 +271,9 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                 }
                 break;
 
-            /**
-             * If no case fits
-             */
+                /**
+                 * If no case fits
+                 */
             default:
                 return unexpectedTokenError(token);
         }

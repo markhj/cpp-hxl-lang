@@ -6,8 +6,6 @@ public:
      * List of tests
      */
     void test() override {
-        gen001_Empty();
-        gen002_InvalidEOF();
         validNode();
         validProperties();
         unexpectedToken();
@@ -15,7 +13,10 @@ public:
         inheritance();
         array();
 
+        gen001_Empty();
+        gen002_InvalidEOF();
         node005_WhitespaceBetweenKeyAndColon();
+        node006_WhitespaceAfterKeyAndColon();
     }
 
     /**
@@ -250,6 +251,20 @@ public:
             auto tokens = Tokenizer::tokenize("<NodeType> A\n\tkey : B\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
                         "[Line 2, Col 5] Unexpected token: T_WHITESPACE",
+                        std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
+        });
+    }
+
+    /**
+     * NODE.006
+     *
+     * Whitespace after ``:`` when declaring property
+     */
+    void node006_WhitespaceAfterKeyAndColon() {
+        it("There should be whitespace after the colon when declaring property", [&]() {
+            auto tokens = Tokenizer::tokenize("<NodeType> A\n\tkey:Hello\n");
+            assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
+                        "[Line 2, Col 6] Unexpected token: Hello",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
