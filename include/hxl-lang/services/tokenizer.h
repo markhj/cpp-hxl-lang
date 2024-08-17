@@ -50,7 +50,8 @@ namespace HXL {
 
         inline static void handleBuffer(std::string &buffer,
                                         std::vector<Token> &tokenList,
-                                        BufferLooksLike &bufferLooksLike);
+                                        BufferLooksLike &bufferLooksLike,
+                                        const SourcePosition &pos);
 
         inline static std::string charToStr(char c);
     };

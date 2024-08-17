@@ -64,7 +64,7 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
             switch (c) {
                 // Delimiters
                 case '<':
-                    handleBuffer(buffer, tokens, bufferLooksLike);
+                    handleBuffer(buffer, tokens, bufferLooksLike, pos);
                     if (peek == '=') {
                         tokens.push_back({T::T_DELIMITER, "<=", pos});
                         ++i;
@@ -76,11 +76,11 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                 case ':':
                 case ',':
                 case '&':
-                    handleBuffer(buffer, tokens, bufferLooksLike);
+                    handleBuffer(buffer, tokens, bufferLooksLike, pos);
                     tokens.push_back({T::T_DELIMITER, charToStr(c), pos});
                     break;
                 case '[':
-                    handleBuffer(buffer, tokens, bufferLooksLike);
+                    handleBuffer(buffer, tokens, bufferLooksLike, pos);
                     if (peek == ']') {
                         tokens.push_back({T::T_DELIMITER, "[]", pos});
                         ++i;
@@ -89,23 +89,23 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                     }
                     break;
 
-                // String literal
+                    // String literal
                 case '"':
                     context = Context::StringLiteral;
                     break;
 
-                // Punctuators
+                    // Punctuators
                 case '{':
                 case '}':
                     tokens.push_back({T::T_PUNCTUATOR, charToStr(c), pos});
                     break;
 
-                // Whitespace
+                    // Whitespace
                 case '\t':
                     tokens.push_back({T::T_TAB, std::nullopt, pos});
                     break;
                 case '\n':
-                    handleBuffer(buffer, tokens, bufferLooksLike);
+                    handleBuffer(buffer, tokens, bufferLooksLike, pos);
                     tokens.push_back({T::T_NEWLINE, std::nullopt, pos});
                     ++pos.line;
                     colOffset = i;
@@ -118,12 +118,12 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                             context = Context::None;
                         }
                     } else {
-                        handleBuffer(buffer, tokens, bufferLooksLike);
+                        handleBuffer(buffer, tokens, bufferLooksLike, pos);
                         tokens.push_back({T::T_WHITESPACE, std::nullopt, pos});
                     }
                     break;
 
-                // GEN.003 states that \r must be ignored.
+                    // GEN.003 states that \r must be ignored.
                 case '\r':
                     // Ignore
                     break;
@@ -138,7 +138,8 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                         bufferLooksLike = BLL::Float;
                     } else if (isAlpha || (c == '_' && bufferLooksLike == BLL::Identifier)) {
                         bufferLooksLike = BLL::Identifier;
-                    } else if (isDigit && (bufferLooksLike == BLL::Integer || bufferLooksLike == BLL::Float || bufferLooksLike == BLL::Identifier)) {
+                    } else if (isDigit && (bufferLooksLike == BLL::Integer || bufferLooksLike == BLL::Float ||
+                                           bufferLooksLike == BLL::Identifier)) {
                         // Do nothing
                     } else {
                         return Error{
@@ -163,19 +164,20 @@ std::string HXL::Tokenizer::charToStr(char c) {
 
 void HXL::Tokenizer::handleBuffer(std::string &buffer,
                                   std::vector<Token> &tokenList,
-                                  BufferLooksLike &bufferLooksLike) {
+                                  BufferLooksLike &bufferLooksLike,
+                                  const SourcePosition &pos) {
     if (buffer.empty()) {
         return;
     }
 
     if (buffer == "true" || buffer == "false") {
-        tokenList.push_back({T::T_BOOL, buffer});
+        tokenList.push_back({T::T_BOOL, buffer, pos});
     } else if (bufferLooksLike == BufferLooksLike::Integer) {
-        tokenList.push_back({T::T_INT, buffer});
+        tokenList.push_back({T::T_INT, buffer, pos});
     } else if (bufferLooksLike == BufferLooksLike::Float) {
-        tokenList.push_back({T::T_FLOAT, buffer});
+        tokenList.push_back({T::T_FLOAT, buffer, pos});
     } else if (bufferLooksLike == BufferLooksLike::Identifier) {
-        tokenList.push_back({T::T_IDENTIFIER, buffer});
+        tokenList.push_back({T::T_IDENTIFIER, buffer, pos});
     } else {
         throw SyntaxError(std::format("Syntax error in: {}", buffer));
     }

@@ -171,7 +171,7 @@ public:
         it("Finds unexpected token during parsing", [&]() {
             auto tokens = Tokenizer::tokenize("<NodeType> A\n<NodeType>: B\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
-                        "[Line 2, Col 11] Unexpected token: :",
+                        "[Line 2, Col 10] Unexpected token: :",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }

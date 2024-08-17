@@ -1,11 +1,15 @@
 #include "hxl-lang/traits/traits.h"
 
 HXL::Error HXL::Traits::HandlesErrors::unexpectedTokenError(const Token &token) {
+    uint16_t col = token.position.col;
+    if (token.value.has_value()) {
+        col -= token.value.value().length();
+    }
     return {
             .errorCode = ErrorCode::HXL_UNEXPECTED_TOKEN,
             .message = std::format("[Line {}, Col {}] Unexpected token: {}",
                                    token.position.line,
-                                   token.position.col,
+                                   col,
                                    token.toString()),
     };
 }
