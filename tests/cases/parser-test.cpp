@@ -17,6 +17,7 @@ public:
         gen002_InvalidEOF();
         node005_WhitespaceBetweenKeyAndColon();
         node006_WhitespaceAfterKeyAndColon();
+        node015_WhitespaceAfterValue();
     }
 
     /**
@@ -265,6 +266,20 @@ public:
             auto tokens = Tokenizer::tokenize("<NodeType> A\n\tkey:Hello\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
                         "[Line 2, Col 6] Unexpected token: Hello",
+                        std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
+        });
+    }
+
+    /**
+     * NODE.015
+     *
+     * Whitespace after property value
+     */
+    void node015_WhitespaceAfterValue() {
+        it("There should not be whitespace after property value.", [&]() {
+            auto tokens = Tokenizer::tokenize("<Node> A\n\tkey:Hello{\n");
+            assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
+                        "[Line 2, Col 10] Unexpected token: {",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
