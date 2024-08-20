@@ -15,6 +15,7 @@ public:
 
         gen001_Empty();
         gen002_InvalidEOF();
+        node002_WhitespaceBetweenNodeTypeAndName();
         node005_WhitespaceBetweenKeyAndColon();
         node006_WhitespaceAfterKeyAndColon();
         node015_WhitespaceAfterValue();
@@ -239,6 +240,20 @@ public:
                              "A",
                              {NodeProperty{"arr", {"a", "b", "c"}, DataType::String}}},
                     });
+        });
+    }
+
+    /**
+     * NODE.002
+     *
+     * Whitespace between node type and name.
+     */
+    void node002_WhitespaceBetweenNodeTypeAndName() {
+        it("There must be whitespace between node type and name", [&]() {
+            auto tokens = Tokenizer::tokenize("<NodeType>A\n");
+            assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
+                        "[Line 1, Col 10] Unexpected token: A",
+                        std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
 

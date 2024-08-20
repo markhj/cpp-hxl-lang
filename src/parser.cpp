@@ -128,6 +128,9 @@ HXL::Result<HXL::Document> HXL::Parser::parse(const std::vector<Token> &tokens) 
                     sentence = Sentence::Node;
                 } else if (context == GC::NodeType && tk == ">") {
                     context = GC::AfterNodeType;
+                    if (peek.has_value() && peek->tokenType != TokenType::T_WHITESPACE) {
+                        return unexpectedTokenError(peek.value());
+                    }
                 } else if (context == GC::PropertyKey && tk == ":") {
                     context = GC::PropertyValue;
                     if (peek.has_value() && peek->tokenType != TokenType::T_WHITESPACE) {
