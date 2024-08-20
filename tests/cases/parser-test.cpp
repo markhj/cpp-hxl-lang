@@ -16,6 +16,7 @@ public:
         gen001_Empty();
         gen002_InvalidEOF();
         node002_WhitespaceBetweenNodeTypeAndName();
+        node003_TabBeforeProperty();
         node005_WhitespaceBetweenKeyAndColon();
         node006_WhitespaceAfterKeyAndColon();
         node015_WhitespaceAfterValue();
@@ -253,6 +254,20 @@ public:
             auto tokens = Tokenizer::tokenize("<NodeType>A\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
                         "[Line 1, Col 10] Unexpected token: A",
+                        std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
+        });
+    }
+
+    /**
+     * NODE.003
+     *
+     * Tab before property.
+     */
+    void node003_TabBeforeProperty() {
+        it("There must be a tab before the property.", [&]() {
+            auto tokens = Tokenizer::tokenize("a: key\n");
+            assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
+                        "[Line 1, Col 0] Unexpected token: a",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
