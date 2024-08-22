@@ -9,12 +9,13 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
 
     std::vector<Token> tokens;
     std::string buffer;
-    char peek;
+    char peek, prev;
 
     enum class Context {
         None,
         StringLiteral,
         Indentation,
+        Comment,
     } context = Context::Indentation;
 
     BufferLooksLike bufferLooksLike = BufferLooksLike::Empty;
@@ -33,11 +34,25 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
     // Initial cursor position in source
     SourcePosition pos{1, 1};
 
+    // Used to indicate when the rest of a line should be ignored
+    // Used to strip comments from the tokenization process
+    bool ignoreRemainderOfLine = false;
+
     for (int i = 0; i < source.length(); ++i) {
         const char c = source[i];
 
         pos.col = i - colOffset;
         peek = i < source.length() - 1 && source[i + 1] != '\n' ? source[i + 1] : '\0';
+        prev = i > 0 ? source[i - 1] : '\0';
+
+        if (ignoreRemainderOfLine) {
+            if (c == '\n') {
+                ignoreRemainderOfLine = false;
+            } else {
+                buffer += c;
+                continue;
+            }
+        }
 
         // When the cursor is between two quotation marks, we continue
         // to add to the buffer, until we meet the second quotation
@@ -53,6 +68,14 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
             continue;
         }
 
+        // CMT.004
+        // Check that single-line comment starts at the beginning of the line
+        if (context == Context::Indentation && peek == '#') {
+            return Error{
+                    ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                    std::format("[Line {}, Col {}] Illegal whitespace", pos.line, pos.col)};
+        }
+
         // If we are parsing an indentation (whitespaces at the beginning of a line)
         // and encounter something that isn't another whitespace character, we set the
         // context back to "None"
@@ -62,6 +85,29 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
 
         try {
             switch (c) {
+                // Comments
+                case '#':
+                    // CMT.002
+                    // There must be whitespace before the #, unless it's the beginning
+                    // of the line
+                    if (i > 0 && prev != ' ') {
+                        return Error{
+                                ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                                std::format("[Line {}, Col {}] Illegal whitespace", pos.line, pos.col)};
+                    }
+
+                    // CMT.002 (End of line), CMT.004 (Stand-alone)
+                    // There must be whitespace after #
+                    if (peek != ' ') {
+                        return Error{
+                                ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                                std::format("[Line {}, Col {}] Illegal whitespace", pos.line, pos.col)};
+                    }
+
+                    ignoreRemainderOfLine = true;
+                    context = Context::Comment;
+                    break;
+
                 // Delimiters
                 case '<':
                     handleBuffer(buffer, tokens, bufferLooksLike, pos);
@@ -105,6 +151,19 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                     tokens.push_back({T::T_TAB, std::nullopt, pos});
                     break;
                 case '\n':
+                    if (context == Context::Comment) {
+                        // CMT.004
+                        // Comments cannot be empty
+                        if (buffer.empty() || buffer == " ") {
+                            return Error{
+                                    ErrorCode::HXL_ILLEGAL_COMMENT,
+                                    std::format("[Line {}] Illegal comment", pos.line)};
+                        }
+
+                        // Empty whatever has been collected in comment context
+                        buffer.clear();
+                    }
+
                     handleBuffer(buffer, tokens, bufferLooksLike, pos);
                     tokens.push_back({T::T_NEWLINE, std::nullopt, pos});
                     ++pos.line;
@@ -117,6 +176,8 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                             tokens.push_back({T::T_TAB, std::nullopt, pos});
                             context = Context::None;
                         }
+                    } else if (peek == '#') {
+                        handleBuffer(buffer, tokens, bufferLooksLike, pos);
                     } else {
                         handleBuffer(buffer, tokens, bufferLooksLike, pos);
                         tokens.push_back({T::T_WHITESPACE, std::nullopt, pos});

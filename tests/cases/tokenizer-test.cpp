@@ -17,7 +17,12 @@ public:
         testTypes();
         inheritance();
         array();
+        comments();
+
         gen005_WhitespaceToTabs();
+        cmt002_WhitespaceAroundComment();
+        cmt003_EmptyComment();
+        cmt004_WhitespaceCommentsStandAlone();
     }
 
     /**
@@ -212,6 +217,30 @@ public:
     }
 
     /**
+     * Comments
+     *
+     * Check that comments are not interpreted as tokens
+     */
+    void comments() {
+        it("Should ignore comments at the end of a line.", [&]() {
+            assertTokenResult(
+                    Tokenizer::tokenize("100 # This is a comment\n"),
+                    {
+                            {TokenType::T_INT, "100"},
+                            {TokenType::T_NEWLINE},
+                    });
+        });
+
+        it("Should ignore comments on a stand-alone line.", [&]() {
+            assertTokenResult(
+                    Tokenizer::tokenize("# This is a comment\n"),
+                    {
+                            {TokenType::T_NEWLINE}
+                    });
+        });
+    }
+
+    /**
      * GEN.005
      *
      * Check that four whitespace characters at the beginning of
@@ -231,6 +260,84 @@ public:
                             {TokenType::T_TAB},
                             {TokenType::T_NEWLINE},
                     });
+        });
+    }
+
+    /**
+     * CMT.002
+     *
+     * There must be exactly one whitespace character before and after the #.
+     */
+    void cmt002_WhitespaceAroundComment() {
+        it("Ensures that there's whitespace in front of the #", [&]() {
+            auto result = Tokenizer::tokenize("100# Comment here\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 3] Illegal whitespace",
+                        result.error());
+        });
+
+        it("Ensures that there's whitespace in after the #", [&]() {
+            auto result = Tokenizer::tokenize("100 #Comment here\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 4] Illegal whitespace",
+                        result.error());
+        });
+    }
+
+    /**
+     * CMT.004
+     *
+     * There must be exactly one whitespace character after #
+     * Whitespace is not allowed in front of the #
+     */
+    void cmt004_WhitespaceCommentsStandAlone() {
+        it("There must not be whitespace before # when single-line comment", [&]() {
+            auto result = Tokenizer::tokenize(" # Comment here\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 0] Illegal whitespace",
+                        result.error());
+        });
+
+        it("There must be whitespace after # when single-line comment", [&]() {
+            auto result = Tokenizer::tokenize("#Comment here\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 0] Illegal whitespace",
+                        result.error());
+        });
+    }
+
+    /**
+     * CMT.003
+     *
+     * Comments cannot be empty
+     */
+    void cmt003_EmptyComment() {
+        it("Must cause an error, if a comment is empty (Stand-alone, no whitespace).", [&]() {
+            auto result = Tokenizer::tokenize("#\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 0] Illegal whitespace",
+                        result.error());
+        });
+
+        it("Must cause an error, if a comment is empty (Stand-alone).", [&]() {
+            auto result = Tokenizer::tokenize("# \n");
+            assertError(ErrorCode::HXL_ILLEGAL_COMMENT,
+                        "[Line 1] Illegal comment",
+                        result.error());
+        });
+
+        it("Must cause an error, if a comment is empty (End of line, no whitespace).", [&]() {
+            auto result = Tokenizer::tokenize("100 #\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 4] Illegal whitespace",
+                        result.error());
+        });
+
+        it("Must cause an error, if a comment is empty (End of line).", [&]() {
+            auto result = Tokenizer::tokenize("100 # \n");
+            assertError(ErrorCode::HXL_ILLEGAL_COMMENT,
+                        "[Line 1] Illegal comment",
+                        result.error());
         });
     }
 };
