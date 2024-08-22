@@ -8,6 +8,7 @@ public:
     void test() override {
         node200_UniqueNodeName();
         node201_UniquePropertyName();
+        ref200_ReferenceMustExist();
     }
 
     /**
@@ -37,6 +38,23 @@ public:
             assertCount(1, errors);
             assertEquals<ErrorCode>(ErrorCode::HXL_NON_UNIQUE_PROPERTY, errors[0].errorCode);
             assertEquals<std::string>(R"(Property "a" under "A" is not unique.)", errors[0].message);
+        });
+    }
+
+    /**
+     * REF.200
+     *
+     * A referenced node must exist
+     */
+    void ref200_ReferenceMustExist() {
+        it("Checks that a node exists when referenced.", [&]() {
+            auto tokens = Tokenizer::tokenize("<Node> A\n\tref&: B\n");
+            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
+            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
+
+            assertCount(1, errors);
+            assertEquals<ErrorCode>(ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND, errors[0].errorCode);
+            assertEquals<std::string>(R"(Referenced node "B" under "A:ref" was not found.)", errors[0].message);
         });
     }
 };

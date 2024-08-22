@@ -31,6 +31,20 @@ HXL::ErrorList HXL::SemanticAnalyzer::analyze(const std::shared_ptr<Document> &d
                 });
             }
             foundPropKeys.push_back(nodeProperty.name);
+
+            if (nodeProperty.dataType == DataType::NodeRef) {
+                auto referencedNode = nodeProperty.values[0];
+                auto findRef = seenNames.find(referencedNode);
+                if (findRef == seenNames.end()) {
+                    errors.push_back({
+                            .errorCode = ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND,
+                            .message = std::format(R"(Referenced node "{}" under {}:{} was not found.)",
+                                                   referencedNode,
+                                                   node.name,
+                                                   nodeProperty.name),
+                    });
+                }
+            }
         }
     }
 
