@@ -385,16 +385,10 @@ public:
      */
     void str004_LineBreakWithinStringLiteral() {
         it("Must be accepted that line-breaks can be part of a string.", [&]() {
-            assertTokenResult(
-                    Tokenizer::tokenize("\tkey: \"Hello \n World\"\n"),
-                    {
-                            {TokenType::T_TAB},
-                            {TokenType::T_IDENTIFIER, "key"},
-                            {TokenType::T_DELIMITER, ":"},
-                            {TokenType::T_WHITESPACE},
-                            {TokenType::T_STRING_LITERAL, "Hello \n World"},
-                            {TokenType::T_NEWLINE},
-                    });
+            auto result = Tokenizer::tokenize("\tkey: \"Hello \n World\"\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 13] Illegal whitespace",
+                        result.error());
         });
     }
 };

@@ -61,6 +61,10 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                 context = Context::None;
                 tokens.push_back({T::T_STRING_LITERAL, buffer, pos});
                 buffer.clear();
+            } else if (c == '\n') {
+                return Error{
+                        ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        std::format("[Line {}, Col {}] Illegal whitespace", pos.line, pos.col)};
             } else {
                 buffer += c;
             }
