@@ -35,7 +35,14 @@ HXL::ErrorList HXL::SemanticAnalyzer::analyze(const std::shared_ptr<Document> &d
             if (nodeProperty.dataType == DataType::NodeRef) {
                 auto referencedNode = nodeProperty.values[0];
                 auto findRef = seenNames.find(referencedNode);
-                if (findRef == seenNames.end()) {
+                if (node.name == referencedNode) {
+                    errors.push_back({
+                            .errorCode = ErrorCode::HXL_ILLEGAL_REFERENCE,
+                            .message = std::format(R"({}:{} is referencing itself.)",
+                                                   node.name,
+                                                   nodeProperty.name),
+                    });
+                } else if (findRef == seenNames.end()) {
                     errors.push_back({
                             .errorCode = ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND,
                             .message = std::format(R"(Referenced node "{}" under {}:{} was not found.)",
