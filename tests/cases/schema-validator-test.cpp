@@ -23,8 +23,7 @@ public:
                                 .properties = {
                                         SchemaNodeProperty{.name = "arr", .dataType = DataType::Int, .structure = ValueStructure::Array},
                                         SchemaNodeProperty{.name = "single", .dataType = DataType::Int},
-                                }
-                        },
+                                }},
                 },
         };
 
@@ -50,26 +49,47 @@ public:
     }
 
     /**
+     * Helper method to assert a specific schema rule.
+     *
+     * @param source
+     * @param errorCode
+     * @param errorMessage
+     */
+    void assertSchemaRule(const std::string &source,
+                          ErrorCode errorCode,
+                          const std::string &errorMessage) {
+        Result<std::vector<Token>> tokens = Tokenizer::tokenize(source);
+        Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
+
+        Schema schema{
+                .types = {
+                        SchemaNodeType{
+                                .name = "Sphere",
+                                .properties = {
+                                        SchemaNodeProperty{.name = "required",
+                                                           .dataType = DataType::Int,
+                                                           .required = true},
+                                },
+                        },
+                },
+        };
+
+        std::shared_ptr<Document> document = std::make_shared<Document>(syntaxTree.get());
+        std::vector<Error> errors = SchemaValidator::validate(schema, document);
+
+        assertCount(1, errors);
+        assertEquals<ErrorCode>(errorCode, errors[0].errorCode);
+        assertEquals<std::string>(errorMessage, errors[0].message);
+    }
+
+    /**
      * SCHEMA.500: Invalid node type
      */
     void schema500_InvalidNodeType() {
         it("Checks that there's an unrecognized node type", [&]() {
-            Result<std::vector<Token>> tokens = Tokenizer::tokenize("<Sphere> Sphere\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-
-            Schema schema{
-                    .types = {
-                            SchemaNodeType{
-                                    .name = "Cube",
-                            },
-                    },
-            };
-
-            std::shared_ptr<Document> document = std::make_shared<Document>(syntaxTree.get());
-            std::vector<Error> errors = SchemaValidator::validate(schema, document);
-
-            assertCount(1, errors);
-            assertEquals<std::string>("Node type not declared in schema: Sphere", errors[0].message);
+            assertSchemaRule("<Cube> A\n",
+                             ErrorCode::HXL_UNKNOWN_NODE_TYPE,
+                             "Node type not declared in schema: Cube");
         });
     }
 
@@ -78,26 +98,9 @@ public:
      */
     void schema520_RequiredProperty() {
         it("Checks that a required property is not present.", [&]() {
-            Result<std::vector<Token>> tokens = Tokenizer::tokenize("<Sphere> A\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-
-            Schema schema{
-                    .types = {
-                            SchemaNodeType{
-                                    .name = "Sphere",
-                                    .properties = {
-                                            SchemaNodeProperty{.name = "prop", .dataType = DataType::Int, .required = true},
-                                    },
-                            },
-                    },
-            };
-
-            std::shared_ptr<Document> document = std::make_shared<Document>(syntaxTree.get());
-            std::vector<Error> errors = SchemaValidator::validate(schema, document);
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_REQUIRED_PROPERTY_NOT_FOUND, errors[0].errorCode);
-            assertEquals<std::string>("Node A is missing required property: prop", errors[0].message);
+            assertSchemaRule("<Sphere> A\n",
+                             ErrorCode::HXL_REQUIRED_PROPERTY_NOT_FOUND,
+                             "Node A is missing required property: required");
         });
     }
 
@@ -106,23 +109,9 @@ public:
      */
     void schema522_UnknownProperty() {
         it("Checks that all defined properties must be defined in schema.", [&]() {
-            Result<std::vector<Token>> tokens = Tokenizer::tokenize("<Sphere> A\n\tprop: 10\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-
-            Schema schema{
-                    .types = {
-                            SchemaNodeType{
-                                    .name = "Sphere",
-                            },
-                    },
-            };
-
-            std::shared_ptr<Document> document = std::make_shared<Document>(syntaxTree.get());
-            std::vector<Error> errors = SchemaValidator::validate(schema, document);
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_UNKNOWN_PROPERTY, errors[0].errorCode);
-            assertEquals<std::string>("Node A has an unknown property: prop", errors[0].message);
+            assertSchemaRule("<Sphere> A\n\tunknown: 10\n\trequired: 10\n",
+                             ErrorCode::HXL_UNKNOWN_PROPERTY,
+                             "Node A has an unknown property: unknown");
         });
     }
 };
