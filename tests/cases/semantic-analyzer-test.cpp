@@ -10,6 +10,7 @@ public:
         node201_UniquePropertyName();
         ref200_ReferenceMustExist();
         ref201_ReferenceMustBeDeclaredBeforeUse();
+        ref202_CircularReferencing();
         ref203_SelfReferencing();
         inhr201_InheritedNodeMustExist();
         inhr202_InheritedNodesMustBeDeclaredBeforeUse();
@@ -79,6 +80,20 @@ public:
     void ref201_ReferenceMustBeDeclaredBeforeUse() {
         it("Checks that a node is declared before being referenced.", [&]() {
             assertSemanticError("<Node> A\n\tref&: B\n<Node> B\n",
+                                ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND,
+                                R"(Referenced node "B" under A:ref was not found.)");
+        });
+    }
+
+    /**
+     * REF.202
+     *
+     * Check that circular referencing isn't possible.
+     * That is node A referencing B which references node A.
+     */
+    void ref202_CircularReferencing() {
+        it("Checks that circular references are not possible.", [&]() {
+            assertSemanticError("<Node> A\n\tref&: B\n<Node> B\n\tref&: A\n",
                                 ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND,
                                 R"(Referenced node "B" under A:ref was not found.)");
         });
