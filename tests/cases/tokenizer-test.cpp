@@ -21,6 +21,9 @@ public:
 
         gen005_WhitespaceToTabs();
         cmt002_WhitespaceAroundComment();
+        str002_HashWithinStringLiteral();
+        str003_ColonWithinStringLiteral();
+        str004_LineBreakWithinStringLiteral();
         cmt003_EmptyComment();
         cmt004_WhitespaceCommentsStandAlone();
     }
@@ -337,6 +340,54 @@ public:
             auto result = Tokenizer::tokenize("100 # \n");
             assertError(ErrorCode::HXL_ILLEGAL_COMMENT,
                         "[Line 1] Illegal comment",
+                        result.error());
+        });
+    }
+
+    /**
+     * STR.002
+     */
+    void str002_HashWithinStringLiteral() {
+        it("Must be accepted that hashtags can be part of a string.", [&]() {
+            assertTokenResult(
+                    Tokenizer::tokenize("\tkey: \"Hello # World\"\n"),
+                    {
+                            {TokenType::T_TAB},
+                            {TokenType::T_IDENTIFIER, "key"},
+                            {TokenType::T_DELIMITER, ":"},
+                            {TokenType::T_WHITESPACE},
+                            {TokenType::T_STRING_LITERAL, "Hello # World"},
+                            {TokenType::T_NEWLINE},
+                    });
+        });
+    }
+
+    /**
+     * STR.003
+     */
+    void str003_ColonWithinStringLiteral() {
+        it("Must be accepted that colon can be part of a string.", [&]() {
+            assertTokenResult(
+                    Tokenizer::tokenize("\tkey: \"Hello : World\"\n"),
+                    {
+                            {TokenType::T_TAB},
+                            {TokenType::T_IDENTIFIER, "key"},
+                            {TokenType::T_DELIMITER, ":"},
+                            {TokenType::T_WHITESPACE},
+                            {TokenType::T_STRING_LITERAL, "Hello : World"},
+                            {TokenType::T_NEWLINE},
+                    });
+        });
+    }
+
+    /**
+     * STR.004
+     */
+    void str004_LineBreakWithinStringLiteral() {
+        it("Must be accepted that line-breaks can be part of a string.", [&]() {
+            auto result = Tokenizer::tokenize("\tkey: \"Hello \n World\"\n");
+            assertError(ErrorCode::HXL_ILLEGAL_WHITESPACE,
+                        "[Line 1, Col 13] Illegal whitespace",
                         result.error());
         });
     }
