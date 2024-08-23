@@ -167,12 +167,12 @@ HXL::TokenizerResult HXL::Tokenizer::tokenize(const std::string &source) {
                     handleBuffer(buffer, tokens, bufferLooksLike, pos);
                     tokens.push_back({T::T_NEWLINE, std::nullopt, pos});
                     ++pos.line;
-                    colOffset = i;
+                    colOffset = i - 1;
                     context = Context::Indentation;
                     break;
                 case ' ':
                     if (context == Context::Indentation) {
-                        if (pos.col == 4) {
+                        if (pos.col == 5) {
                             tokens.push_back({T::T_TAB, std::nullopt, pos});
                             context = Context::None;
                         }

@@ -174,7 +174,7 @@ public:
         it("Finds unexpected token during parsing", [&]() {
             auto tokens = Tokenizer::tokenize("<NodeType> A\n<NodeType>: B\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
-                        "[Line 2, Col 10] Unexpected token: :",
+                        "[Line 2, Col 11] Unexpected token: :",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
@@ -281,7 +281,7 @@ public:
         it("There should not be whitespace between key and colon", [&]() {
             auto tokens = Tokenizer::tokenize("<NodeType> A\n\tkey : B\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
-                        "[Line 2, Col 5] Unexpected token: T_WHITESPACE",
+                        "[Line 2, Col 6] Unexpected token: T_WHITESPACE",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
@@ -295,7 +295,7 @@ public:
         it("There should be whitespace after the colon when declaring property", [&]() {
             auto tokens = Tokenizer::tokenize("<NodeType> A\n\tkey:Hello\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
-                        "[Line 2, Col 6] Unexpected token: Hello",
+                        "[Line 2, Col 7] Unexpected token: Hello",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
@@ -309,7 +309,7 @@ public:
         it("There should not be whitespace after property value.", [&]() {
             auto tokens = Tokenizer::tokenize("<Node> A\n\tkey:Hello{\n");
             assertError(ErrorCode::HXL_UNEXPECTED_TOKEN,
-                        "[Line 2, Col 10] Unexpected token: {",
+                        "[Line 2, Col 11] Unexpected token: {",
                         std::get<Error>(Parser::parse(std::get<std::vector<Token>>(tokens))));
         });
     }
