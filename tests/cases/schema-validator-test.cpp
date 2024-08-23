@@ -77,6 +77,28 @@ public:
      * SCHEMA.520: Required property not found
      */
     void schema520_RequiredProperty() {
+        it("Checks that a required property is not present.", [&]() {
+            Result<std::vector<Token>> tokens = Tokenizer::tokenize("<Sphere> A\n");
+            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
+
+            Schema schema{
+                    .types = {
+                            SchemaNodeType{
+                                    .name = "Sphere",
+                                    .properties = {
+                                            SchemaNodeProperty{.name = "prop", .dataType = DataType::Int, .required = true},
+                                    },
+                            },
+                    },
+            };
+
+            std::shared_ptr<Document> document = std::make_shared<Document>(syntaxTree.get());
+            std::vector<Error> errors = SchemaValidator::validate(schema, document);
+
+            assertCount(1, errors);
+            assertEquals<ErrorCode>(ErrorCode::HXL_REQUIRED_PROPERTY_NOT_FOUND, errors[0].errorCode);
+            assertEquals<std::string>("Node A is missing required property: prop", errors[0].message);
+        });
     }
 
     /**

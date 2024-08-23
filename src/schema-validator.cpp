@@ -41,6 +41,26 @@ HXL::ErrorList HXL::SchemaValidator::validate(const HXL::Schema &schema, const s
                               }
                           });
         }
+
+        // Iterate through the properties defined in the schema
+        for (const SchemaNodeProperty &schemaNodeProperty: schemaForNode.properties) {
+            if (schemaNodeProperty.required) {
+                auto snpIt = std::find_if(node.properties.begin(),
+                                          node.properties.end(),
+                                          [&](const NodeProperty &item) {
+                                              return item.name == schemaNodeProperty.name;
+                                          });
+
+                if (snpIt == node.properties.end()) {
+                    errors.push_back({
+                            .errorCode = ErrorCode::HXL_REQUIRED_PROPERTY_NOT_FOUND,
+                            .message = std::format("Node {} is missing required property: {}",
+                                                   node.name,
+                                                   schemaNodeProperty.name),
+                    });
+                }
+            }
+        }
     }
 
     return errors;
