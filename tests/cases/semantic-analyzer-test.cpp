@@ -10,6 +10,7 @@ public:
         node201_UniquePropertyName();
         ref200_ReferenceMustExist();
         ref203_SelfReferencing();
+        inhr201_InheritedNodeMustExist();
     }
 
     /**
@@ -73,6 +74,23 @@ public:
             assertCount(1, errors);
             assertEquals<ErrorCode>(ErrorCode::HXL_ILLEGAL_REFERENCE, errors[0].errorCode);
             assertEquals<std::string>(R"(A:ref is referencing itself.)", errors[0].message);
+        });
+    }
+
+    /**
+     * INHR.201
+     *
+     * Inherited node must exist.
+     */
+    void inhr201_InheritedNodeMustExist() {
+        it("Checks that an inherited exists.", [&]() {
+            auto tokens = Tokenizer::tokenize("<Node> A <= B\n");
+            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
+            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
+
+            assertCount(1, errors);
+            assertEquals<ErrorCode>(ErrorCode::HXL_ILLEGAL_INHERITANCE, errors[0].errorCode);
+            assertEquals<std::string>(R"(Node A attempts to inherit B which does not exist.)", errors[0].message);
         });
     }
 };
