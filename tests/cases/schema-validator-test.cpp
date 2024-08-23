@@ -105,5 +105,24 @@ public:
      * SCHEMA.522: Unrecognized property
      */
     void schema522_UnknownProperty() {
+        it("Checks that all defined properties must be defined in schema.", [&]() {
+            Result<std::vector<Token>> tokens = Tokenizer::tokenize("<Sphere> A\n\tprop: 10\n");
+            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
+
+            Schema schema{
+                    .types = {
+                            SchemaNodeType{
+                                    .name = "Sphere",
+                            },
+                    },
+            };
+
+            std::shared_ptr<Document> document = std::make_shared<Document>(syntaxTree.get());
+            std::vector<Error> errors = SchemaValidator::validate(schema, document);
+
+            assertCount(1, errors);
+            assertEquals<ErrorCode>(ErrorCode::HXL_UNKNOWN_PROPERTY, errors[0].errorCode);
+            assertEquals<std::string>("Node A has an unknown property: prop", errors[0].message);
+        });
     }
 };

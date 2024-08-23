@@ -26,6 +26,19 @@ HXL::ErrorList HXL::SchemaValidator::validate(const HXL::Schema &schema, const s
 
         // Iterate through the node's properties and verify against the schema
         for (const NodeProperty &nodeProperty: node.properties) {
+            auto npIt = std::find_if(schemaForNode.properties.begin(),
+                                     schemaForNode.properties.end(),
+                                     [&](const SchemaNodeProperty &item) {
+                                         return item.name == nodeProperty.name;
+                                     });
+
+            if (npIt == schemaForNode.properties.end()) {
+                errors.push_back({
+                        .errorCode = ErrorCode::HXL_UNKNOWN_PROPERTY,
+                        .message = std::format("Node {} has an unknown property: {}", node.name, nodeProperty.name),
+                });
+            }
+
             std::for_each(schemaForNode.properties.begin(),
                           schemaForNode.properties.end(),
                           [&](const SchemaNodeProperty &schemaNodeProperty) {
