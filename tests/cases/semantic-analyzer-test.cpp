@@ -15,17 +15,33 @@ public:
     }
 
     /**
+     * Helper method which checks that a provided source results in exactly one
+     * error, with the given code and message.
+     *
+     * @param source
+     * @param errorCode
+     * @param errorMessage
+     */
+    void assertSemanticError(const std::string &source,
+                             ErrorCode errorCode,
+                             const std::string &errorMessage) {
+        auto tokens = Tokenizer::tokenize(source);
+        Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
+        std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
+
+        assertCount(1, errors);
+        assertEquals<ErrorCode>(errorCode, errors[0].errorCode);
+        assertEquals<std::string>(errorMessage, errors[0].message);
+    }
+
+    /**
      * Check that node names are unique.
      */
     void node200_UniqueNodeName() {
         it("Checks that node names are unique", [&]() {
-            auto tokens = Tokenizer::tokenize("<NodeType> A\n\n<NodeType> B\n\n<NodeType> A\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_NON_UNIQUE_NODE, errors[0].errorCode);
-            assertEquals<std::string>("Node name \"A\" is not unique.", errors[0].message);
+            assertSemanticError("<NodeType> A\n\n<NodeType> B\n\n<NodeType> A\n",
+                                ErrorCode::HXL_NON_UNIQUE_NODE,
+                                "Node name \"A\" is not unique.");
         });
     }
 
@@ -34,13 +50,9 @@ public:
      */
     void node201_UniquePropertyName() {
         it("Checks that property names are unique", [&]() {
-            auto tokens = Tokenizer::tokenize("<NodeType> A\n\ta: 8\n\tb: 10\n\ta: 11\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_NON_UNIQUE_PROPERTY, errors[0].errorCode);
-            assertEquals<std::string>(R"(Property "a" under "A" is not unique.)", errors[0].message);
+            assertSemanticError("<NodeType> A\n\ta: 8\n\tb: 10\n\ta: 11\n",
+                                ErrorCode::HXL_NON_UNIQUE_PROPERTY,
+                                R"(Property "a" under "A" is not unique.)");
         });
     }
 
@@ -51,13 +63,9 @@ public:
      */
     void ref200_ReferenceMustExist() {
         it("Checks that a node exists when referenced.", [&]() {
-            auto tokens = Tokenizer::tokenize("<Node> A\n\tref&: B\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND, errors[0].errorCode);
-            assertEquals<std::string>(R"(Referenced node "B" under A:ref was not found.)", errors[0].message);
+            assertSemanticError("<Node> A\n\tref&: B\n",
+                                ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND,
+                                R"(Referenced node "B" under A:ref was not found.)");
         });
     }
 
@@ -68,13 +76,9 @@ public:
      */
     void ref203_SelfReferencing() {
         it("Checks that a node cannot reference itself.", [&]() {
-            auto tokens = Tokenizer::tokenize("<Node> A\n\tref&: A\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_ILLEGAL_REFERENCE, errors[0].errorCode);
-            assertEquals<std::string>(R"(A:ref is referencing itself.)", errors[0].message);
+            assertSemanticError("<Node> A\n\tref&: A\n",
+                                ErrorCode::HXL_ILLEGAL_REFERENCE,
+                                R"(A:ref is referencing itself.)");
         });
     }
 
@@ -85,13 +89,9 @@ public:
      */
     void inhr201_InheritedNodeMustExist() {
         it("Checks that an inherited exists.", [&]() {
-            auto tokens = Tokenizer::tokenize("<Node> A <= B\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_ILLEGAL_INHERITANCE, errors[0].errorCode);
-            assertEquals<std::string>(R"(Node A attempts to inherit B which does not exist.)", errors[0].message);
+            assertSemanticError("<Node> A <= B\n",
+                                ErrorCode::HXL_ILLEGAL_INHERITANCE,
+                                R"(Node A attempts to inherit B which does not exist.)");
         });
     }
 
@@ -102,13 +102,9 @@ public:
      */
     void inhr203_InheritSelf() {
         it("Checks that a node cannot inherit itself..", [&]() {
-            auto tokens = Tokenizer::tokenize("<Node> A <= A\n");
-            Result<Document> syntaxTree = Parser::parse(std::get<std::vector<Token>>(tokens));
-            std::vector<Error> errors = SemanticAnalyzer::analyze(std::make_shared<Document>(syntaxTree.get()));
-
-            assertCount(1, errors);
-            assertEquals<ErrorCode>(ErrorCode::HXL_ILLEGAL_INHERITANCE, errors[0].errorCode);
-            assertEquals<std::string>(R"(Node A cannot inherit itself.)", errors[0].message);
+            assertSemanticError("<Node> A <= A\n",
+                                ErrorCode::HXL_ILLEGAL_INHERITANCE,
+                                R"(Node A cannot inherit itself.)");
         });
     }
 };
