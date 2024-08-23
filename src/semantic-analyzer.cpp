@@ -19,14 +19,22 @@ HXL::ErrorList HXL::SemanticAnalyzer::analyze(const std::shared_ptr<Document> &d
         }
 
         if (node.inheritance.has_value()) {
-            auto findInhr = seenNames.find(node.inheritance.value().from);
-            if (findInhr == seenNames.end()) {
+            if (node.inheritance.value().from == node.name) {
                 errors.push_back({
                                          .errorCode = ErrorCode::HXL_ILLEGAL_INHERITANCE,
-                                         .message = std::format("Node {} attempts to inherit {} which does not exist.",
-                                                                node.name,
-                                                                node.inheritance.value().from),
+                                         .message = std::format("Node {} cannot inherit itself.", node.name),
                                  });
+            } else {
+                auto findInhr = seenNames.find(node.inheritance.value().from);
+                if (findInhr == seenNames.end()) {
+                    errors.push_back({
+                                             .errorCode = ErrorCode::HXL_ILLEGAL_INHERITANCE,
+                                             .message = std::format(
+                                                     "Node {} attempts to inherit {} which does not exist.",
+                                                     node.name,
+                                                     node.inheritance.value().from),
+                                     });
+                }
             }
         }
 
