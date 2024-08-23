@@ -9,8 +9,10 @@ public:
         node200_UniqueNodeName();
         node201_UniquePropertyName();
         ref200_ReferenceMustExist();
+        ref201_ReferenceMustBeDeclaredBeforeUse();
         ref203_SelfReferencing();
         inhr201_InheritedNodeMustExist();
+        inhr202_InheritedNodesMustBeDeclaredBeforeUse();
         inhr203_InheritSelf();
     }
 
@@ -70,6 +72,19 @@ public:
     }
 
     /**
+     * REF.201
+     *
+     * Node must be declared before being referenced.
+     */
+    void ref201_ReferenceMustBeDeclaredBeforeUse() {
+        it("Checks that a node is declared before being referenced.", [&]() {
+            assertSemanticError("<Node> A\n\tref&: B\n<Node> B\n",
+                                ErrorCode::HXL_NODE_REFERENCE_NOT_FOUND,
+                                R"(Referenced node "B" under A:ref was not found.)");
+        });
+    }
+
+    /**
      * REF.203
      *
      * A node is not allowed to reference itself.
@@ -90,6 +105,19 @@ public:
     void inhr201_InheritedNodeMustExist() {
         it("Checks that an inherited exists.", [&]() {
             assertSemanticError("<Node> A <= B\n",
+                                ErrorCode::HXL_ILLEGAL_INHERITANCE,
+                                R"(Node A attempts to inherit B which does not exist.)");
+        });
+    }
+
+    /**
+     * INHR.202
+     *
+     * Inherited node must be declared before being used.
+     */
+    void inhr202_InheritedNodesMustBeDeclaredBeforeUse() {
+        it("Checks that a node has been declared before being inherited.", [&]() {
+            assertSemanticError("<Node> A <= B\n\ta: 2\n<Node> B\n",
                                 ErrorCode::HXL_ILLEGAL_INHERITANCE,
                                 R"(Node A attempts to inherit B which does not exist.)");
         });
